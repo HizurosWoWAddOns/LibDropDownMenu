@@ -298,7 +298,7 @@ function lib.Create_DropDownMenu(name,parent,opts)
 	right:SetTexCoord(0.8046875,1,0,1);
 	right:SetPoint("LEFT",middle,"RIGHT",0,0);
 
-	menu.Text = menu:CreateFontString(name.."Text","ARTWORK");
+	menu.Text = menu:CreateFontString(name.."Text","ARTWORK","GameFontHighlightSmall");
 	menu.Text:SetNonSpaceWrap(false);
 	menu.Text:SetJustifyH("RIGHT");
 	menu.Text:SetSize(0,10);

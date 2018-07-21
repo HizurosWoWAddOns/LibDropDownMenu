@@ -1,5 +1,5 @@
 
-local MAJOR, MINOR = "LibDropDownMenu", 3;
+local MAJOR, MINOR = "LibDropDownMenu", 4;
 local lib = LibStub:NewLibrary(MAJOR, MINOR);
 local _CreateFrame
 
