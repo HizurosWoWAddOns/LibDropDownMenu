@@ -960,8 +960,8 @@ function lib.ToggleDropDownMenu(level, value, dropDownFrame, anchorName, xOffset
 	UIDropDownMenuDelegate:SetAttribute("createframes", true);
 	lib.UIDROPDOWNMENU_MENU_LEVEL = level;
 	lib.UIDROPDOWNMENU_MENU_VALUE = value;
-	local listFrame = _G["LibDropDownMenu_List"..level];
 	local listFrameName = "LibDropDownMenu_List"..level;
+	local listFrame = _G[listFrameName];
 	local tempFrame;
 	local point, relativePoint, relativeTo;
 	if ( not dropDownFrame ) then
