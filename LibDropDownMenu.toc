@@ -1,4 +1,4 @@
-## Interface: 80100
+## Interface: 80200
 ## Title: LibDropDownMenu
 ## Notes: Library providing downdown menu like blizzards DropDownMenu
 ## Author: Hizuro
