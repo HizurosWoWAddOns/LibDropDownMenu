@@ -55,6 +55,7 @@ local function listOnShow(self)
 	if ( self:GetID() > 1 ) then
 		self.parent = _G["LibDropDownMenu_List"..(self:GetID() - 1)];
 	end
+	lib.UIDropDownMenu_OnShow(self);
 end
 
 local function menuOnHide(self)
@@ -78,7 +79,8 @@ local function menuButtonOnLeave(self)
 end
 
 local function menuButtonOnClick(self,button)
-	lib.ToggleDropDownMenu(nil, nil, self:GetParent());
+	local parent = self:GetParent();
+	lib.ToggleDropDownMenu(nil, nil, parent);
 	PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON);
 end
 
@@ -225,6 +227,7 @@ function lib.Create_DropDownMenuList(name,parent,opts)
 	list:SetToplevel(true);
 	list:SetFrameStrata("FULLSCREEN_DIALOG");
 	list:EnableMouse(true);
+	list:SetClampedToScreen(true);
 	list:SetScript("OnClick",listOnClick);
 	list:SetScript("OnEnter",lib.UIDropDownMenu_StopCounting);
 	list:SetScript("OnLeave",lib.UIDropDownMenu_StartCounting);
@@ -238,15 +241,7 @@ function lib.Create_DropDownMenuList(name,parent,opts)
 		end
 	end
 
-	local backdrop = CreateFrame("Frame",name.."Backdrop",list);
-	backdrop:SetAllPoints();
-	backdrop:SetBackdrop({
-		bgFile=[[Interface\DialogFrame\UI-DialogBox-Background-Dark]],
-		edgeFile=[[Interface\DialogFrame\UI-DialogBox-Border]],
-		tile=true, tileSize=32, edgeSize=32,
-		insets = {left=11, right=12, top=12, bottom=9}
-	});
-
+	local backdrop = CreateFrame("Frame",name.."Backdrop",list,"DialogBorderDarkTemplate");
 	local menuBackdrop = CreateFrame("Frame",name.."MenuBackdrop",list);
 	menuBackdrop:SetAllPoints();
 	menuBackdrop:SetBackdrop({
