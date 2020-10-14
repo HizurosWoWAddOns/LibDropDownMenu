@@ -241,7 +241,7 @@ function lib.Create_DropDownMenuList(name,parent,opts)
 		end
 	end
 
-	local backdrop = CreateFrame("Frame",name.."Backdrop",list);
+	local backdrop = CreateFrame("Frame",name.."Backdrop",list,BackdropTemplateMixin and "BackdropTemplate" or nil);
 	backdrop:SetAllPoints();
 	backdrop:SetBackdrop({
 		bgFile=[[Interface\DialogFrame\UI-DialogBox-Background-Dark]],
@@ -250,7 +250,7 @@ function lib.Create_DropDownMenuList(name,parent,opts)
 		insets = {left=11, right=12, top=12, bottom=9}
 	});
 
-	local menuBackdrop = CreateFrame("Frame",name.."MenuBackdrop",list);
+	local menuBackdrop = CreateFrame("Frame",name.."MenuBackdrop",list,BackdropTemplateMixin and "BackdropTemplate" or nil);
 	menuBackdrop:SetAllPoints();
 	menuBackdrop:SetBackdrop({
 		bgFile=[[Interface\Tooltips\UI-Tooltip-Background]],
