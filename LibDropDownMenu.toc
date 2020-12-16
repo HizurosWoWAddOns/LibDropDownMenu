@@ -5,6 +5,8 @@
 ## Version: @project-version@
 ## OptionalDeps: LibStub, CallbackHandler-1.0
 
+## X-Curse-Project-ID: 298617
+
 #@no-lib-strip@
 libs\LibStub\LibStub.lua
 libs\CallbackHandler-1.0\CallbackHandler-1.0.lua
