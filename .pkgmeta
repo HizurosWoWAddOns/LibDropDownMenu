@@ -1,19 +1,19 @@
 package-as: LibDropDownMenu
 
 externals:
-	libs/LibStub:
-		url: https://repos.wowace.com/wow/libstub/trunk
-		tag: latest
+    libs/LibStub:
+        url: https://repos.wowace.com/wow/libstub/trunk
+        tag: latest
 
-	libs/CallbackHandler-1.0:
-		url: https://repos.wowace.com/wow/callbackhandler/trunk/CallbackHandler-1.0
-		tag: latest
+    libs/CallbackHandler-1.0:
+        url: https://repos.wowace.com/wow/callbackhandler/trunk/CallbackHandler-1.0
+        tag: latest
 
 enable-nolib-creation: yes
 
 ignore:
-	- libs/LibStub/tests
-	- libs/LibStub/LibStub.toc
-	- libs/CallbackHandler-1.0/CallbackHandler-1.0.xml
+    - libs/LibStub/tests
+    - libs/LibStub/LibStub.toc
+    - libs/CallbackHandler-1.0/CallbackHandler-1.0.xml
 
 license-output: LICENSE.txt
