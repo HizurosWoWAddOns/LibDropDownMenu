@@ -1,48 +1,84 @@
 
--- Replacement of LibDropDownMenu.xml
+local PixelUtil = PixelUtil;
+
+if not PixelUtil then -- classic compatibilty
+	PixelUtil = {};
+
+	function PixelUtil.GetPixelToUIUnitFactor()
+		local physicalWidth, physicalHeight = GetPhysicalScreenSize();
+		return 768.0 / physicalHeight;
+	end
+
+	function PixelUtil.GetNearestPixelSize(uiUnitSize, layoutScale, minPixels)
+		if uiUnitSize == 0 and (not minPixels or minPixels == 0) then
+			return 0;
+		end
+
+		local uiUnitFactor = PixelUtil.GetPixelToUIUnitFactor();
+		local numPixels = Round((uiUnitSize * layoutScale) / uiUnitFactor);
+		if minPixels then
+			if uiUnitSize < 0.0 then
+				if numPixels > -minPixels then
+					numPixels = -minPixels;
+				end
+			else
+				if numPixels < minPixels then
+					numPixels = minPixels;
+				end
+			end
+		end
+
+		return numPixels * uiUnitFactor / layoutScale;
+	end
+
+	function PixelUtil.SetWidth(region, width, minPixels)
+		region:SetWidth(PixelUtil.GetNearestPixelSize(width, region:GetEffectiveScale(), minPixels));
+	end
+
+	function PixelUtil.SetHeight(region, height, minPixels)
+		region:SetHeight(PixelUtil.GetNearestPixelSize(height, region:GetEffectiveScale(), minPixels));
+	end
+
+	function PixelUtil.SetSize(region, width, height, minWidthPixels, minHeightPixels)
+		PixelUtil.SetWidth(region, width, minWidthPixels);
+		PixelUtil.SetHeight(region, height, minHeightPixels);
+	end
+
+	function PixelUtil.SetPoint(region, point, relativeTo, relativePoint, offsetX, offsetY, minOffsetXPixels, minOffsetYPixels)
+		region:SetPoint(point, relativeTo, relativePoint,
+			PixelUtil.GetNearestPixelSize(offsetX, region:GetEffectiveScale(), minOffsetXPixels),
+			PixelUtil.GetNearestPixelSize(offsetY, region:GetEffectiveScale(), minOffsetYPixels)
+		);
+	end
+
+	function PixelUtil.SetStatusBarValue(statusBar, value)
+		local width = statusBar:GetWidth();
+		if width and width > 0.0 then
+			local min, max = statusBar:GetMinMaxValues();
+			local percent = ClampedPercentageBetween(value, min, max);
+			if percent == 0.0 or percent == 1.0 then
+				statusBar:SetValue(value);
+			else
+				local numPixels = PixelUtil.GetNearestPixelSize(statusBar:GetWidth() * percent, statusBar:GetEffectiveScale());
+				local roundedValue = Lerp(min, max, numPixels / width);
+				statusBar:SetValue(roundedValue);
+			end
+		else
+			statusBar:SetValue(value);
+		end
+	end
+end
+
+-- This file contains mixins and functions as replacement for LibDropDownMenu.xml
 local lib = LibStub("LibDropDownMenu");
 
-local function buttonOnEnable(self)
-	self.invisibleButton:Hide();
-end
+local DropDownMenuListMixin = {};
 
-local function buttonOnDisable(self)
-	self.invisibleButton:Show();
-end
-
-local function buttonColorSwatchOnClick(self)
-	CloseMenus();
-	lib.UIDropDownMenuButton_OpenColorPicker(self:GetParent());
-end
-
-local function buttonColorSwatchOnEnter(self)
-	lib.CloseDropDownMenus(self:GetParent():GetParent():GetID() + 1);
-	_G[self:GetName().."SwatchBg"]:SetVertexColor(NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b);
-	lib.UIDropDownMenu_StopCounting(self:GetParent():GetParent());
-end
-
-local function buttonColorSwatchOnLeave(self)
-	_G[self:GetName().."SwatchBg"]:SetVertexColor(HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b);
-	lib.UIDropDownMenu_StartCounting(self:GetParent():GetParent());
-end
-
-local function buttonExpandArrowOnClick(self, button, down)
-	lib.ToggleDropDownMenu(self:GetParent():GetParent():GetID() + 1, self:GetParent().value, nil, nil, nil, nil, self:GetParent().menuList, self);
-end
-
-local function buttonExpandArrowOnEnter(self)
-	lib.UIDropDownMenuButton_OnEnter(self:GetParent());
-end
-
-local function buttonExpandArrowOnLeave(self)
-	lib.UIDropDownMenuButton_OnLeave(self:GetParent());
-end
-
-local function listOnClick(self)
+function DropDownMenuListMixin:OnClick()
 	self:Hide();
 end
 
-local function listOnShow(self)
+function DropDownMenuListMixin:OnShow()
 	for i=1, lib.UIDROPDOWNMENU_MAXBUTTONS do
 		if (not self.noResize) then
 			_G[self:GetName().."Button"..i]:SetWidth(self.maxWidth);
@@ -58,33 +94,93 @@ local function listOnShow(self)
 	lib.UIDropDownMenu_OnShow(self);
 end
 
-local function menuOnHide(self)
+local DropDownMenuMixin = {}
+
+function DropDownMenuMixin:OnHide()
 	lib.CloseDropDownMenus();
 end
 
-local function menuButtonOnEnter(self)
-	local parent = self:GetParent();
-	local myscript = parent:GetScript("OnEnter");
-	if(myscript ~= nil) then
-		myscript(parent);
+local DropDownMenuColorSwatchMixin = {};
+
+function DropDownMenuColorSwatchMixin:OnClick()
+	CloseMenus();
+	lib.UIDropDownMenuButton_OpenColorPicker(self:GetParent());
+end
+
+function DropDownMenuColorSwatchMixin:OnEnter()
+	lib.CloseDropDownMenus(self:GetParent():GetParent():GetID() + 1);
+	self.SwatchBg:SetVertexColor(NORMAL_FONT_COLOR:GetRGB());
+end
+
+function DropDownMenuColorSwatchMixin:OnLeave()
+	self.SwatchBg:SetVertexColor(HIGHLIGHT_FONT_COLOR:GetRGB());
+end
+
+local DropDownMenuButtonMixin = {}
+
+function DropDownMenuButtonMixin:OnEnable()
+	self.invisibleButton:Hide();
+end
+
+function DropDownMenuButtonMixin:OnDisable()
+	self.invisibleButton:Show();
+end
+
+function DropDownMenuButtonMixin:OnEnter(...)
+	ExecuteFrameScript(self:GetParent(), "OnEnter", ...);
+end
+
+function DropDownMenuButtonMixin:OnLeave(...)
+	ExecuteFrameScript(self:GetParent(), "OnLeave", ...);
+end
+
+function DropDownMenuButtonMixin:OnMouseDown(button)
+	if self:IsEnabled() then
+		lib.ToggleDropDownMenu(nil, nil, self:GetParent());
+		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON);
 	end
 end
 
-local function menuButtonOnLeave(self)
-	local parent = self:GetParent();
-	local myscript = parent:GetScript("OnLeave");
-	if(myscript ~= nil) then
-		myscript(parent);
+local LargeDropDownMenuButtonMixin = CreateFromMixins(DropDownMenuButtonMixin);
+
+function LargeDropDownMenuButtonMixin:OnMouseDown(button)
+	if self:IsEnabled() then
+		local parent = self:GetParent();
+		lib.ToggleDropDownMenu(nil, nil, parent, parent, -8, 8);
+		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON);
 	end
 end
 
-local function menuButtonOnClick(self,button)
-	local parent = self:GetParent();
-	lib.ToggleDropDownMenu(nil, nil, parent);
-	PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON);
+local DropDownExpandArrowMixin = {};
+
+function DropDownExpandArrowMixin:OnClick(button)
+	if self:IsEnabled() then
+		lib.ToggleDropDownMenu(self:GetParent():GetParent():GetID() + 1, self:GetParent().value, nil, nil, nil, nil, self:GetParent().menuList, self);
+	end
+end
+
+function DropDownExpandArrowMixin:OnEnter()
+	local level =  self:GetParent():GetParent():GetID() + 1;
+
+	lib.CloseDropDownMenus(level);
+
+	if self:IsEnabled() then
+		local listFrame = _G["LibDropDownMenu_List"..level];
+		if ( not listFrame or not listFrame:IsShown() or select(2, listFrame:GetPoint()) ~= self ) then
+			lib.ToggleDropDownMenu(level, self:GetParent().value, nil, nil, nil, nil, self:GetParent().menuList, self);
+		end
+	end
 end
 
 local UIDropDownCustomMenuEntryMixin = {};
+
+function UIDropDownCustomMenuEntryMixin:OnEnter()
+	lib.UIDropDownMenu_StopCounting(self:GetOwningDropdown());
+end
+
+function UIDropDownCustomMenuEntryMixin:OnLeave()
+	lib.UIDropDownMenu_StartCounting(self:GetOwningDropdown());
+end
 
 function UIDropDownCustomMenuEntryMixin:GetPreferredEntryWidth()
 	-- NOTE: Only width is currently supported, dropdown menus size vertically based on how many buttons are present.
@@ -113,32 +209,56 @@ function UIDropDownCustomMenuEntryMixin:GetContextData()
 	return self.contextData;
 end
 
-local function customMenuEntryOnEnter(self)
-	lib.UIDropDownMenu_StopCounting(self:GetOwningDropdown());
+-- lua replacement of ColorSwatchTemplate
+function lib.Create_ColorSwatch(name, parent, opts)
+	local colorswatch = CreateFrame("Button",name,parent);
+	Mixin(colorswatch,DropDownMenuColorSwatchMixin);
+	colorswatch:Hide();
+	colorswatch:SetSize(16,16);
+	colorswatch:SetScript("OnClick",colorswatch.OnClick);
+	colorswatch:SetScript("OnEnter",colorswatch.OnEnter);
+	colorswatch:SetScript("OnLeave",colorswatch.OnLeave);
+
+	colorswatch.SwatchBg = colorswatch:CreateTexture(name.."SwatchBg","BACKGROUND",nil,-3);
+	colorswatch.SwatchBg:SetPoint("CENTER");
+	colorswatch.SwatchBg:SetVertexColor(HIGHLIGHT_FONT_COLOR:GetRGB());
+
+	colorswatch.InnerBorder = colorswatch:CreateTexture(name.."InnerBorder","BACKGROUND",nil,-2);
+	colorswatch.InnerBorder:SetPoint("CENTER");
+	colorswatch.InnerBorder:SetVertexColor(BLACK_FONT_COLOR:GetRGB());
+
+	colorswatch.Color = colorswatch:CreateTexture(name.."Color","BACKGROUND",nil,-1);
+	colorswatch.Color:SetPoint("CENTER");
+	colorswatch.Color:SetVertexColor(HIGHLIGHT_FONT_COLOR:GetRGB());
+
+	PixelUtil.SetSize(colorswatch.SwatchBg,14,14);
+	PixelUtil.SetSize(colorswatch.InnerBorder,12,12);
+	PixelUtil.SetSize(colorswatch.Color,10,10);
+
+	return colorswatch;
 end
 
-local function customMenuEntryOnLeave(self)
-	lib.UIDropDownMenu_StartCounting(self:GetOwningDropdown());
-end
-
+-- lua replacement of UIDropDownCustomMenuEntryTemplate
 function lib.Create_DropDownCustomMenuEntry(name,parent,opts)
-	local frame = CreateFrame("frame");
+	local frame = CreateFrame("frame",name,parent);
+	Mixin(frame,UIDropDownCustomMenuEntryMixin);
 	frame:EnableMouse(true);
 	frame:Hide();
-	frame:SetScript("OnEnter",customMenuEntryOnEnter);
-	frame:SetScript("OnLeave",customMenuEntryOnLeave);
-	Mixin(frame,UIDropDownCustomMenuEntryMixin);
+	frame:SetScript("OnEnter",frame.OnEnter);
+	frame:SetScript("OnLeave",frame.OnLeave);
 end
 
+-- lua replacement of UIDropDownMenuButtonTemplate
 function lib.Create_DropDownMenuButton(name,parent,opts)
 	local button = CreateFrame("Button",name,parent);
+	Mixin(button,DropDownMenuButtonMixin);
 	button:SetSize(100,16);
-	button:SetFrameLevel(parent:GetFrameLevel()+2); -- OnLoad
-	button:SetScript("OnClick",lib.UIDropDownMenuButton_OnClick);
-	button:SetScript("OnEnter",lib.UIDropDownMenuButton_OnEnter);
-	button:SetScript("OnLeave",lib.UIDropDownMenuButton_OnLeave);
-	button:SetScript("OnEnable",buttonOnEnable);
-	button:SetScript("OnDisable",buttonOnDisable);
+	button:SetFrameLevel(parent:GetFrameLevel()+2);
+	button:SetScript("OnClick",button.OnClick);
+	button:SetScript("OnEnter",button.OnEnter);
+	button:SetScript("OnLeave",button.OnLeave);
+	button:SetScript("OnEnable",button.OnEnable);
+	button:SetScript("OnDisable",button.OnDisable);
 
 	if opts then
 		if opts.id then
@@ -166,14 +286,14 @@ function lib.Create_DropDownMenuButton(name,parent,opts)
 	check:SetSize(16,16);
 	check:SetPoint("LEFT",0,0);
 	check:SetTexCoord(0,0.5,0.5,1);
-	--button.Check = check;
+	button.Check = check;
 
 	local uncheck = button:CreateTexture(name.."UnCheck","ARTWORK");
 	uncheck:SetTexture([[Interface\Common\UI-DropDownRadioChecks]]);
 	uncheck:SetSize(16,16);
 	uncheck:SetPoint("LEFT",0,0);
 	uncheck:SetTexCoord(0.5,1,0.5,1);
-	--button.UnCheck = uncheck;
+	button.UnCheck = uncheck;
 
 	local icon = button:CreateTexture(name.."Icon","ARTWORK");
 	icon:Hide();
@@ -181,36 +301,24 @@ function lib.Create_DropDownMenuButton(name,parent,opts)
 	icon:SetPoint("RIGHT",0,0);
 	button.Icon = icon;
 
-	local color = CreateFrame("Button",name.."ColorSwatch",button);
-	color:Hide();
-	color:SetSize(16,16);
+	local color = lib.Create_ColorSwatch(name.."ColorSwatch",button);
 	color:SetPoint("RIGHT",-6,0);
-	color:SetScript("OnClick",buttonColorSwatchOnClick);
-	color:SetScript("OnEnter",buttonColorSwatchOnEnter);
-	color:SetScript("OnLeave",buttonColorSwatchOnLeave);
-	color:SetNormalTexture([[Interface\ChatFrame\ChatFrameColorSwatch]]);
-	--button.ColorSwatch = color;
-
-	local swatchBg = color:CreateTexture(name.."ColorSwatchSwatchBg","BACKGROUND");
-	swatchBg:SetSize(14,14);
-	swatchBg:SetPoint("CENTER",0,0);
-	swatchBg:SetVertexColor(1,1,1);
-	button.ColorSwatchSwatchBg = swatchBg;
+	button.ColorSwatch = color;
 
 	local expandArrow = CreateFrame("Button",name.."ExpandArrow",button);
+	Mixin(expandArrow,DropDownExpandArrowMixin);
 	expandArrow:SetMotionScriptsWhileDisabled(true);
 	expandArrow:SetSize(16,16);
 	expandArrow:SetPoint("RIGHT",0,0);
-	expandArrow:SetScript("OnClick",buttonExpandArrowOnClick);
-	expandArrow:SetScript("OnEnter",buttonExpandArrowOnEnter);
-	expandArrow:SetScript("OnLeave",buttonExpandArrowOnLeave);
+	expandArrow:SetScript("OnClick",expandArrow.OnClick);
+	expandArrow:SetScript("OnEnter",expandArrow.OnEnter);
 	button.ExpandArrow = expandArrow;
 
 	local arrow = expandArrow:CreateTexture(nil,"ARTWORK");
 	arrow:SetTexture([[Interface\ChatFrame\ChatFrameExpandArrow]]);
 	arrow:SetAllPoints();
 
-	button.invisibleButton = CreateFrame("Frame",name.."InvisibleButton",button);
+	button.invisibleButton = CreateFrame("Button",name.."InvisibleButton",button);
 	button.invisibleButton:Hide();
 	button.invisibleButton:SetPoint("TOPLEFT");
 	button.invisibleButton:SetPoint("BOTTOMLEFT");
@@ -221,18 +329,18 @@ function lib.Create_DropDownMenuButton(name,parent,opts)
 	return button;
 end
 
+-- lua replacement of DropDownMenuListTemplate
 function lib.Create_DropDownMenuList(name,parent,opts)
 	local list = CreateFrame("Button",name,parent);
+	Mixin(list,DropDownMenuListMixin);
 	list:Hide();
 	list:SetToplevel(true);
 	list:SetFrameStrata("FULLSCREEN_DIALOG");
 	list:EnableMouse(true);
 	list:SetClampedToScreen(true);
-	list:SetScript("OnClick",listOnClick);
-	list:SetScript("OnEnter",lib.UIDropDownMenu_StopCounting);
-	list:SetScript("OnLeave",lib.UIDropDownMenu_StartCounting);
+	list:SetScript("OnClick",list.OnClick);
 	list:SetScript("OnUpdate",lib.UIDropDownMenu_OnUpdate);
-	list:SetScript("OnShow",listOnShow);
+	list:SetScript("OnShow",list.OnShow);
 	list:SetScript("OnHide",lib.UIDropDownMenu_OnHide);
 
 	if opts then
@@ -266,17 +374,30 @@ function lib.Create_DropDownMenuList(name,parent,opts)
 	end
 
 	if not lib.UIDROPDOWNMENU_DEFAULT_TEXT_HEIGHT then
-		local fontName, fontHeight, fontFlags = _G["DropDownList1Button1NormalText"]:GetFont();
+		local fontName, fontHeight, fontFlags = _G["LibDropDownMenu_List1Button1NormalText"]:GetFont();
 		lib.UIDROPDOWNMENU_DEFAULT_TEXT_HEIGHT = fontHeight;
 	end
 
 	return list;
 end
 
+-- lua replacement of UIDropDownMenuButtonScriptTemplate
+function lib.Create_DropDownToggleButton(name,parent,mixin)
+	local button = CreateFrame("Button",name,parent);
+	Mixin(button,mixin or DropDownMenuButtonMixin);
+	button:SetMotionScriptsWhileDisabled(true);
+	button:SetScript("OnClick",button.OnClick);
+	button:SetScript("OnEnter",button.OnEnter);
+	button:SetScript("OnLeave",button.OnLeave);
+	return button;
+end
+
+-- lua replacement of UIDropDownMenuTemplate
 function lib.Create_DropDownMenu(name,parent,opts)
 	local menu = CreateFrame("Frame",name);
+	Mixin(menu,DropDownMenuMixin);
 	menu:SetSize(40,32);
-	menu:SetScript("OnHide",menuOnHide);
+	menu:SetScript("OnHide",menu.OnHide);
 
 	if opts then
 		if opts.id then
@@ -314,13 +435,9 @@ function lib.Create_DropDownMenu(name,parent,opts)
 	menu.Icon:SetPoint("LEFT",30,2);
 
 	local buttonName = name.."Button";
-	menu.Button = CreateFrame("Button",buttonName,menu);
-	menu.Button:SetMotionScriptsWhileDisabled(true);
+	menu.Button = lib.Create_DropDownToggleButton(buttonName,menu);
 	menu.Button:SetSize(24,24);
 	menu.Button:SetPoint("TOPRIGHT",menu.Right,"TOPRIGHT",-16,-18);
-	menu.Button:SetScript("OnEnter",menuButtonOnEnter);
-	menu.Button:SetScript("OnLeave",menuButtonOnLeave);
-	menu.Button:SetScript("OnClick",menuButtonOnClick);
 
 	menu.Button.NormalTexture = menu.Button:CreateTexture(buttonName.."NormalTexture","ARTWORK");
 	menu.Button.NormalTexture:SetTexture([[Interface\ChatFrame\UI-ChatIcon-ScrollDown-Up]]);
@@ -341,6 +458,63 @@ function lib.Create_DropDownMenu(name,parent,opts)
 	menu.Button.HighlightTexture:SetTexture([[Interface\ChatFrame\UI-Common-MouseHilight]],"ADD");
 	menu.Button.HighlightTexture:SetAllPoints();
 	menu.Button:SetHighlightTexture(menu.Button.HighlightTexture,"ADD");
+
+	return menu;
+end
+
+-- lua replacement of LargeUIDropDownMenuTemplate
+function lib.Create_LargeDropDownMenu(name,parent)
+	local menu = CreateFrame("Frame",name);
+	Mixin(menu,DropDownMenuMixin);
+	menu:SetScript("OnHide",menu.OnHide);
+
+	local buttonName = name.."Button";
+	menu.Button = lib.Create_DropDownToggleButton(buttonName,menu,LargeDropDownMenuButtonMixin);
+	menu.Button:SetSize(27,26);
+	menu.Button:SetPoint("RIGHT",-3,2);
+
+	menu.Button.NormalTexture = menu.Button:CreateTexture(buttonName.."NormalTexture","ARTWORK");
+	menu.Button.NormalTexture:SetAtlas("auctionhouse-ui-dropdown-arrow-up",true);
+	menu.Button.NormalTexture:SetPoints("RIGHT");
+	menu.Button:SetNormalTexture(menu.Button.NormalTexture);
+
+	menu.Button.PushedTexture = menu.Button:CreateTexture(buttonName.."PushedTexture","ARTWORK");
+	menu.Button.PushedTexture:SetAtlas("auctionhouse-ui-dropdown-arrow-down",true);
+	menu.Button.PushedTexture:SetPoints("RIGHT");
+	menu.Button:SetPushedTexture(menu.Button.PushedTexture);
+
+	menu.Button.DisabledTexture = menu.Button:CreateTexture(buttonName.."DisabledTexture","ARTWORK");
+	menu.Button.DisabledTexture:SetAtlas("auctionhouse-ui-dropdown-arrow-disabled",true);
+	menu.Button.DisabledTexture:SetPoints("RIGHT");
+	menu.Button:SetDisabledTexture(menu.Button.DisabledTexture);
+
+	menu.Button.HighlightTexture = menu.Button:CreateTexture(buttonName.."HighlightTexture","ARTWORK");
+	menu.Button.HighlightTexture:SetTexture([[Interface\ChatFrame\UI-Common-MouseHilight]],"ADD");
+	menu.Button.HighlightTexture:SetPoints("CENTER");
+	menu.Button:SetHighlightTexture(menu.Button.HighlightTexture,"ADD");
+
+	menu.Left = menu:CreateTexture("ARTWORK");
+	menu.Left:SetAtlas("auctionhouse-ui-dropdown-left",true);
+	menu.Left:SetPoint("LEFT");
+
+	menu.Right = menu:CreateTexture("ARTWORK");
+	menu.Right:SetAtlas("auctionhouse-ui-dropdown-right",true);
+	menu.Right:SetPoint("LEFT");
+
+	menu.Middle = menu:CreateTexture("ARTWORK");
+	menu.Middle:SetAtlas("auctionhouse-ui-dropdown-middle");
+	menu.Middle:SetPoint("TOPLEFT",menu.Left,"TOPRIGHT");
+	menu.Middle:SetPoint("BOTTOMRIGHT",menu.Right,"BOTTOMLEFT");
+
+	menu.Text = menu:CreateFrontString("NumberFont_Small");
+	menu.Text:SetNonSpaceWrap(false);
+	menu.Text:SetJustifyH("RIGHT");
+	menu.Text:SetPoint("RIGHT",menu.Button,"LEFT",-4,1);
+
+	menu.Icon = menu:CreateTexture("OVERLAY");
+	menu.Icon:Hide();
+	menu.Icon:SetSize(16,16);
+	menu.Icon:SetPoint("LEFT",30,2);
 
 	return menu;
 end

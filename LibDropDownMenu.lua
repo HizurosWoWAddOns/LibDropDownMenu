@@ -1,5 +1,5 @@
 
-local MAJOR, MINOR = "LibDropDownMenu", 4;
+local MAJOR, MINOR = "LibDropDownMenu", tonumber((gsub("@project-version@","r",""))) or 9999;
 local lib = LibStub:NewLibrary(MAJOR, MINOR);
 local _CreateFrame
 
@@ -84,8 +84,26 @@ end
 local function GetChild(frame, name, key)
 	if (frame[key]) then
 		return frame[key];
-	else
+	elseif name then
 		return _G[name..key];
+	end
+
+	return nil;
+end
+
+local GetValueOrCallFunction = GetValueOrCallFunction;
+if not GetValueOrCallFunction then -- classic compatibility
+	function GetValueOrCallFunction(tbl, key, ...)
+		if not tbl then
+			return;
+		end
+
+		local value = tbl[key];
+		if type(value) == "function" then
+			return value(...);
+		else
+			return value;
+		end
 	end
 end
 
@@ -158,62 +176,32 @@ function lib.UIDropDownMenu_OnUpdate(self, elapsed)
 		lib.UIDropDownMenu_RefreshDropDownSize(self);
 		self.shouldRefresh = false;
 	end
-
-	if ( not self.showTimer or not self.isCounting ) then
-		return;
-	elseif ( self.showTimer < 0 ) then
-		self:Hide();
-		self.showTimer = nil;
-		self.isCounting = nil;
-	else
-		self.showTimer = self.showTimer - elapsed;
-	end
-end
-
--- Start the countdown on a frame
-function lib.UIDropDownMenu_StartCounting(frame)
-	if ( frame.parent ) then
-		lib.UIDropDownMenu_StartCounting(frame.parent);
-	else
-		frame.showTimer = lib.UIDROPDOWNMENU_SHOW_TIME;
-		frame.isCounting = 1;
-	end
-end
-
--- Stop the countdown on a frame
-function lib.UIDropDownMenu_StopCounting(frame)
-	if ( frame.parent ) then
-		lib.UIDropDownMenu_StopCounting(frame.parent);
-	else
-		frame.isCounting = nil;
-	end
 end
 
 function lib.UIDropDownMenuButtonInvisibleButton_OnEnter(self)
-	lib.UIDropDownMenu_StopCounting(self:GetParent():GetParent());
 	lib.CloseDropDownMenus(self:GetParent():GetParent():GetID() + 1);
 	local parent = self:GetParent();
 	if ( parent.tooltipTitle and parent.tooltipWhileDisabled) then
 		if ( parent.tooltipOnButton ) then
-			GameTooltip:SetOwner(parent, "ANCHOR_RIGHT");
-			GameTooltip_SetTitle(GameTooltip, parent.tooltipTitle);
+			local tooltip = GetAppropriateTooltip();
+			tooltip:SetOwner(parent, "ANCHOR_RIGHT");
+			GameTooltip_SetTitle(tooltip, parent.tooltipTitle);
 			if parent.tooltipInstruction then
-				GameTooltip_AddInstructionLine(GameTooltip, parent.tooltipInstruction);
+				GameTooltip_AddInstructionLine(tooltip, parent.tooltipInstruction);
 			end
 			if parent.tooltipText then
-				GameTooltip_AddNormalLine(GameTooltip, parent.tooltipText, true);
+				GameTooltip_AddNormalLine(tooltip, parent.tooltipText, true);
 			end
 			if parent.tooltipWarning then
-				GameTooltip_AddColoredLine(GameTooltip, parent.tooltipWarning, RED_FONT_COLOR, true);
+				GameTooltip_AddColoredLine(tooltip, parent.tooltipWarning, RED_FONT_COLOR, true);
 			end
-			GameTooltip:Show();
+			tooltip:Show();
 		end
 	end
 end
 
 function lib.UIDropDownMenuButtonInvisibleButton_OnLeave(self)
-	lib.UIDropDownMenu_StartCounting(self:GetParent():GetParent());
-	GameTooltip:Hide();
+	GetAppropriateTooltip():Hide();
 end
 
 function lib.UIDropDownMenuButton_OnEnter(self)
@@ -227,15 +215,15 @@ function lib.UIDropDownMenuButton_OnEnter(self)
 		lib.CloseDropDownMenus(self:GetParent():GetID() + 1);
 	end
 	self.Highlight:Show();
-	lib.UIDropDownMenu_StopCounting(self:GetParent());
 	if ( self.tooltipTitle and not self.noTooltipWhileEnabled ) then
 		if ( self.tooltipOnButton ) then
-			GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
-			GameTooltip_SetTitle(GameTooltip, self.tooltipTitle);
+			local tooltip = GetAppropriateTooltip();
+			tooltip:SetOwner(self, "ANCHOR_RIGHT");
+			GameTooltip_SetTitle(tooltip, self.tooltipTitle);
 			if self.tooltipText then
-				GameTooltip_AddNormalLine(GameTooltip, self.tooltipText, true);
+				GameTooltip_AddNormalLine(tooltip, self.tooltipText, true);
 			end
-			GameTooltip:Show();
+			tooltip:Show();
 		end
 	end
 
@@ -243,12 +231,13 @@ function lib.UIDropDownMenuButton_OnEnter(self)
 		self.Icon:SetTexture(self.mouseOverIcon);
 		self.Icon:Show();
 	end
+
+	GetValueOrCallFunction(self, "funcOnEnter", self);
 end
 
 function lib.UIDropDownMenuButton_OnLeave(self)
 	self.Highlight:Hide();
-	lib.UIDropDownMenu_StartCounting(self:GetParent());
-	GameTooltip:Hide();
+	GetAppropriateTooltip():Hide();
 
 	if ( self.mouseOverIcon ~= nil ) then
 		if ( self.icon ~= nil ) then
@@ -257,6 +246,8 @@ function lib.UIDropDownMenuButton_OnLeave(self)
 			self.Icon:Hide();
 		end
 	end
+
+	GetValueOrCallFunction(self, "funcOnLeave", self);
 end
 
 --[[
@@ -300,6 +291,7 @@ info.minWidth = [nil, NUMBER] -- Minimum width for this line
 info.customFrame = frame -- Allows this button to be a completely custom frame, should inherit from UIDropDownCustomMenuEntryTemplate and override appropriate methods.
 info.icon = [TEXTURE] -- An icon for the button.
 info.mouseOverIcon = [TEXTURE] -- An override icon when a button is moused over.
+info.ignoreAsMenuSelection [nil, true] -- Never set the menu text/icon to this, even when this button is checked
 ]]
 
 function lib.UIDropDownMenu_CreateInfo()
@@ -359,6 +351,18 @@ function lib.UIDropDownMenu_AddSeparator(level,arg2)
 	};
 
 	lib.UIDropDownMenu_AddButton(separatorInfo, level);
+end
+
+function lib.UIDropDownMenu_AddSpace(level)
+	local spaceInfo = {
+		hasArrow = false,
+		dist = 0,
+		isTitle = true,
+		isUninteractable = true,
+		notCheckable = true,
+	};
+
+	lib.UIDropDownMenu_AddButton(spaceInfo, level);
 end
 
 function lib.UIDropDownMenu_AddButton(info, level)
@@ -482,6 +486,8 @@ function lib.UIDropDownMenu_AddButton(info, level)
 
 	-- Pass through attributes
 	button.func = info.func;
+	button.funcOnEnter = info.funcOnEnter;
+	button.funcOnLeave = info.funcOnLeave;
 	button.owner = info.owner;
 	button.hasOpacity = info.hasOpacity;
 	button.opacity = info.opacity;
@@ -506,6 +512,7 @@ function lib.UIDropDownMenu_AddButton(info, level)
 	button.padding = info.padding;
 	button.icon = info.icon;
 	button.mouseOverIcon = info.mouseOverIcon;
+	button.ignoreAsMenuSelection = info.ignoreAsMenuSelection;
 
 	if ( info.value ) then
 		button.value = info.value;
@@ -638,7 +645,7 @@ function lib.UIDropDownMenu_AddButton(info, level)
 	-- If has a colorswatch, show it and vertex color it
 	local colorSwatch = _G[listFrameName.."Button"..index.."ColorSwatch"];
 	if ( info.hasColorSwatch ) then
-		_G["LibDropDownMenu_List"..level.."Button"..index.."ColorSwatch".."NormalTexture"]:SetVertexColor(info.r, info.g, info.b);
+		_G["LibDropDownMenu_List"..level.."Button"..index.."ColorSwatch"].Color:SetVertexColor(info.r, info.g, info.b);
 		button.r = info.r;
 		button.g = info.g;
 		button.b = info.b;
@@ -774,16 +781,18 @@ function lib.UIDropDownMenu_Refresh(frame, useValue, dropdownLevel)
 			local checkImage = _G["LibDropDownMenu_List"..dropdownLevel.."Button"..i.."Check"];
 			local uncheckImage = _G["LibDropDownMenu_List"..dropdownLevel.."Button"..i.."UnCheck"];
 			if ( checked ) then
-				somethingChecked = true;
-				local icon = _G[frame:GetName().."Icon"];
-				if (button.iconOnly and icon and button.icon) then
-					lib.UIDropDownMenu_SetIconImage(icon, button.icon, button.iconInfo);
-				elseif ( useValue ) then
-					lib.UIDropDownMenu_SetText(frame, button.value);
-					icon:Hide();
-				else
-					lib.UIDropDownMenu_SetText(frame, button:GetText());
-					icon:Hide();
+				if not button.ignoreAsMenuSelection then
+					somethingChecked = true;
+					local icon = GetChild(frame, frame:GetName(), "Icon");
+					if (button.iconOnly and icon and button.icon) then
+						lib.UIDropDownMenu_SetIconImage(icon, button.icon, button.iconInfo);
+					elseif ( useValue ) then
+						lib.UIDropDownMenu_SetText(frame, button.value);
+						icon:Hide();
+					else
+						lib.UIDropDownMenu_SetText(frame, button:GetText());
+						icon:Hide();
+					end
 				end
 				button:LockHighlight();
 				checkImage:Show();
@@ -804,6 +813,8 @@ function lib.UIDropDownMenu_Refresh(frame, useValue, dropdownLevel)
 	end
 	if(somethingChecked == nil) then
 		lib.UIDropDownMenu_SetText(frame, VIDEO_QUALITY_LABEL6);
+		local icon = GetChild(frame, frame:GetName(), "Icon");
+		icon:Hide();
 	end
 	if (not frame.noResize) then
 		for i=1, lib.UIDROPDOWNMENU_MAXBUTTONS do
@@ -1165,11 +1176,6 @@ function lib.ToggleDropDownMenu(level, value, dropDownFrame, anchorName, xOffset
 			listFrame.parentID = anchorFrame:GetID();
 			listFrame:SetPoint(point, anchorFrame, relativePoint, xOffset, yOffset);
 		end
-
-		if ( autoHideDelay and tonumber(autoHideDelay)) then
-			listFrame.showTimer = autoHideDelay;
-			listFrame.isCounting = 1;
-		end
 	end
 end
 
@@ -1182,10 +1188,43 @@ function lib.CloseDropDownMenus(level)
 	end
 end
 
+local function UIDropDownMenu_ContainsMouse()
+	for i = 1, UIDROPDOWNMENU_MAXLEVELS do
+		local dropdown = _G["LibDropDownMenu_List"..i];
+		if dropdown:IsShown() and dropdown:IsMouseOver() then
+			return true;
+		end
+	end
+
+	return false;
+end
+
+function lib.UIDropDownMenu_HandleGlobalMouseEvent(button, event)
+	if event == "GLOBAL_MOUSE_DOWN" and (button == "LeftButton" or button == "RightButton") then
+		if not UIDropDownMenu_ContainsMouse() then
+			lib.CloseDropDownMenus();
+		end
+	end
+end
+
 function lib.UIDropDownMenu_OnShow(self)
 	if ( self.onShow ) then
 		self.onShow();
 		self.onShow = nil;
+	end
+
+	for i=1, lib.UIDROPDOWNMENU_MAXBUTTONS do
+		if (not self.noResize) then
+			_G[self:GetName().."Button"..i]:SetWidth(self.maxWidth);
+		end
+	end
+
+	if (not self.noResize) then
+		self:SetWidth(self.maxWidth+25);
+	end
+
+	if ( self:GetID() > 1 ) then
+		self.parent = _G["LibDropDownMenu_List"..(self:GetID() - 1)];
 	end
 end
 
@@ -1266,18 +1305,18 @@ function lib.UIDropDownMenu_ClearAll(frame)
 	end
 end
 
-function lib.UIDropDownMenu_JustifyText(frame, justification)
+function lib.UIDropDownMenu_JustifyText(frame, justification, customXOffset)
 	local frameName = frame:GetName();
 	local text = GetChild(frame, frameName, "Text");
 	text:ClearAllPoints();
 	if ( justification == "LEFT" ) then
-		text:SetPoint("LEFT", GetChild(frame, frameName, "Left"), "LEFT", 27, 2);
+		text:SetPoint("LEFT", GetChild(frame, frameName, "Left"), "LEFT", customXOffset or 27, 2);
 		text:SetJustifyH("LEFT");
 	elseif ( justification == "RIGHT" ) then
-		text:SetPoint("RIGHT", GetChild(frame, frameName, "Right"), "RIGHT", -43, 2);
+		text:SetPoint("RIGHT", GetChild(frame, frameName, "Right"), "RIGHT", customXOffset or -43, 2);
 		text:SetJustifyH("RIGHT");
 	elseif ( justification == "CENTER" ) then
-		text:SetPoint("CENTER", GetChild(frame, frameName, "Middle"), "CENTER", -5, 2);
+		text:SetPoint("CENTER", GetChild(frame, frameName, "Middle"), "CENTER", customXOffset or -5, 2);
 		text:SetJustifyH("CENTER");
 	end
 end
@@ -1343,10 +1382,11 @@ end
 function lib.UIDropDownMenu_DisableDropDown(dropDown)
 	local dropDownName = dropDown:GetName();
 	local label = GetChild(dropDown, dropDownName, "Label");
-	if ( label ) then
-		label:SetVertexColor(GRAY_FONT_COLOR.r, GRAY_FONT_COLOR.g, GRAY_FONT_COLOR.b);
+	if label then
+		label:SetVertexColor(GRAY_FONT_COLOR:GetRGB());
 	end
-	GetChild(dropDown, dropDownName, "Text"):SetVertexColor(GRAY_FONT_COLOR.r, GRAY_FONT_COLOR.g, GRAY_FONT_COLOR.b);
+	GetChild(dropDown, dropDownName, "Icon"):SetVertexColor(GRAY_FONT_COLOR:GetRGB());
+	GetChild(dropDown, dropDownName, "Text"):SetVertexColor(GRAY_FONT_COLOR:GetRGB());
 	GetChild(dropDown, dropDownName, "Button"):Disable();
 	dropDown.isDisabled = 1;
 end
@@ -1354,10 +1394,11 @@ end
 function lib.UIDropDownMenu_EnableDropDown(dropDown)
 	local dropDownName = dropDown:GetName();
 	local label = GetChild(dropDown, dropDownName, "Label");
-	if ( label ) then
-		label:SetVertexColor(NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b);
+	if label then
+		label:SetVertexColor(NORMAL_FONT_COLOR:GetRGB());
 	end
-	GetChild(dropDown, dropDownName, "Text"):SetVertexColor(HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b);
+	GetChild(dropDown, dropDownName, "Icon"):SetVertexColor(HIGHLIGHT_FONT_COLOR:GetRGB());
+	GetChild(dropDown, dropDownName, "Text"):SetVertexColor(HIGHLIGHT_FONT_COLOR:GetRGB());
 	GetChild(dropDown, dropDownName, "Button"):Enable();
 	dropDown.isDisabled = nil;
 end
@@ -1369,7 +1410,7 @@ end
 function lib.UIDropDownMenu_GetValue(id)
 	--Only works if the dropdown has just been initialized, lame, I know =(
 	local button = _G["LibDropDownMenu_List1Button"..id];
-	if ( button ) then
+	if button then
 		return _G["LibDropDownMenu_List1Button"..id].value;
 	else
 		return nil;
