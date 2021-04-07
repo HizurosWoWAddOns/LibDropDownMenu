@@ -103,7 +103,8 @@ end
 local DropDownMenuColorSwatchMixin = {};
 
 function DropDownMenuColorSwatchMixin:OnClick()
-	CloseMenus();
+	--CloseMenus();
+	lib.CloseDropDownMenus();
 	lib.UIDropDownMenuButton_OpenColorPicker(self:GetParent());
 end
 
@@ -254,9 +255,9 @@ function lib.Create_DropDownMenuButton(name,parent,opts)
 	Mixin(button,DropDownMenuButtonMixin);
 	button:SetSize(100,16);
 	button:SetFrameLevel(parent:GetFrameLevel()+2);
-	button:SetScript("OnClick",button.OnClick);
-	button:SetScript("OnEnter",button.OnEnter);
-	button:SetScript("OnLeave",button.OnLeave);
+	button:SetScript("OnClick",lib.UIDropDownMenuButton_OnClick);
+	button:SetScript("OnEnter",lib.UIDropDownMenuButton_OnEnter);
+	button:SetScript("OnLeave",lib.UIDropDownMenuButton_OnLeave);
 	button:SetScript("OnEnable",button.OnEnable);
 	button:SetScript("OnDisable",button.OnDisable);
 

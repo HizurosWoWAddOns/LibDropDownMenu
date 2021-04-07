@@ -5,7 +5,7 @@ local _CreateFrame
 
 if not lib then return end
 
-local _G = _G;
+local _G,_print = _G,print;
 
 local function print(...)
 	local colors,t,c = {"0099ff","00ff00","ff6060","44ffff","ffff00","ff8800","ff44ff","ffffff"},{},1;
@@ -19,7 +19,7 @@ local function print(...)
 		end
 		tinsert(t,v);
 	end
-	print(unpack(t));
+	_print(unpack(t));
 end
 
 lib.UIDROPDOWNMENU_MAXBUTTONS = 1;
@@ -1180,8 +1180,9 @@ function lib.ToggleDropDownMenu(level, value, dropDownFrame, anchorName, xOffset
 end
 
 function lib.CloseDropDownMenus(level)
-	if ( not level ) then
-		level = 1;
+	level = level or 1;
+	if level>lib.UIDROPDOWNMENU_MAXLEVELS then
+		level = lib.UIDROPDOWNMENU_MAXLEVELS;
 	end
 	for i=level, lib.UIDROPDOWNMENU_MAXLEVELS do
 		_G["LibDropDownMenu_List"..i]:Hide();
@@ -1189,7 +1190,7 @@ function lib.CloseDropDownMenus(level)
 end
 
 local function UIDropDownMenu_ContainsMouse()
-	for i = 1, UIDROPDOWNMENU_MAXLEVELS do
+	for i = 1, lib.UIDROPDOWNMENU_MAXLEVELS do
 		local dropdown = _G["LibDropDownMenu_List"..i];
 		if dropdown:IsShown() and dropdown:IsMouseOver() then
 			return true;
