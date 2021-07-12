@@ -79,18 +79,17 @@ if not PixelUtil then -- classic compatibilty
 	end
 end
 
-local function ColorSwatch_OnClick()
-	--CloseMenus();
+local function ColorSwatch_OnClick(self)
 	CloseDropDownMenus();
 	UIDropDownMenuButton_OpenColorPicker(self:GetParent());
 end
 
-local function ColorSwatch_OnEnter()
+local function ColorSwatch_OnEnter(self)
 	CloseDropDownMenus(self:GetParent():GetParent():GetID() + 1);
 	self.SwatchBg:SetVertexColor(NORMAL_FONT_COLOR:GetRGB());
 end
 
-local function ColorSwatch_OnLeave()
+local function ColorSwatch_OnLeave(self)
 	self.SwatchBg:SetVertexColor(HIGHLIGHT_FONT_COLOR:GetRGB());
 end
 
@@ -212,7 +211,7 @@ function Create_DropDownMenuButton(name,parent,opts)
 	return button;
 end
 
-local function List_OnClick()
+local function List_OnClick(self)
 	self:Hide();
 end
 
@@ -225,7 +224,7 @@ function Create_DropDownMenuList(name,parent,opts)
 	list:SetFrameStrata("FULLSCREEN_DIALOG");
 	list:EnableMouse(true);
 	list:SetClampedToScreen(true);
-	--list:SetScript("OnClick",List_OnClick);
+	list:SetScript("OnClick",List_OnClick);
 	list:SetScript("OnUpdate",UIDropDownMenu_OnUpdate);
 	list:SetScript("OnShow",UIDropDownMenu_OnShow);
 	list:SetScript("OnHide",UIDropDownMenu_OnHide);
