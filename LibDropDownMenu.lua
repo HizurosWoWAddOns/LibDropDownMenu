@@ -1262,6 +1262,10 @@ function UIDropDownMenu_HandleGlobalMouseEvent(button, event)
 	end
 end
 
+if WOW_PROJECT_ID == WOW_PROJECT_MAINLINE then
+	hooksecurefunc(_G,"UIDropDownMenu_HandleGlobalMouseEvent",UIDropDownMenu_HandleGlobalMouseEvent);
+end
+
 function UIDropDownMenu_OnShow(self)
 	if ( self.onShow ) then
 		self.onShow();
