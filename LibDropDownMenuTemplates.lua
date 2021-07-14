@@ -1,13 +1,15 @@
--- Custom dropdown buttons are instantiated by some external system.
--- When calling UIDropDownMenu_AddButton that system sets info.customFrame to the instance of the frame it wants to place on the menu.
--- The dropdown menu creates its button for the entry as it normally would, but hides all elements.  The custom frame is then anchored
--- to that button and assumes responsibility for all relevant dropdown menu operations.
--- The hidden button will request a size that it should become from the custom frame.
 
 local CreateFromMixins,_G,select = CreateFromMixins,_G,select
 local ExecuteFrameScript,PlaySound = ExecuteFrameScript,PlaySound;
 
 setfenv(1,LibStub("LibDropDownMenu"));
+-- start of content from UIDropDownMenuTemplates.lua
+
+-- Custom dropdown buttons are instantiated by some external system.
+-- When calling UIDropDownMenu_AddButton that system sets info.customFrame to the instance of the frame it wants to place on the menu.
+-- The dropdown menu creates its button for the entry as it normally would, but hides all elements.  The custom frame is then anchored
+-- to that button and assumes responsibility for all relevant dropdown menu operations.
+-- The hidden button will request a size that it should become from the custom frame.
 
 DropDownMenuButtonMixin = {}
 

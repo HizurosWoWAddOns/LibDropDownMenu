@@ -14,7 +14,8 @@ local UIParent,GameTooltip_SetTitle = UIParent,GameTooltip_SetTitle;
 local GameFontDisableSmallLeft = GameFontDisableSmallLeft;
 local GameFontHighlightSmallLeft = GameFontHighlightSmallLeft;
 local GameFontNormalSmallLeft = GameFontNormalSmallLeft;
-local GameTooltip_AddInstructionLine,GameTooltip_AddNormalLine = GameTooltip_AddInstructionLine,GameTooltip_AddNormalLine;
+local GameTooltip_AddInstructionLine = GameTooltip_AddInstructionLine;
+local GameTooltip_AddNormalLine = GameTooltip_AddNormalLine;
 local GameTooltip_AddColoredLine = GameTooltip_AddColoredLine;
 local GetValueOrCallFunction = GetValueOrCallFunction;
 
@@ -53,6 +54,7 @@ if WOW_PROJECT_ID ~= WOW_PROJECT_MAINLINE then -- classic compatibilty
 end
 
 setfenv(1,lib);
+-- start of content from UIDropDownMenu.lua
 
 UIDROPDOWNMENU_MAXBUTTONS = 1;
 UIDROPDOWNMENU_MAXLEVELS = 2;
@@ -341,7 +343,7 @@ end
 function UIDropDownMenu_CreateFrames(level, index)
 	while ( level > UIDROPDOWNMENU_MAXLEVELS ) do
 		UIDROPDOWNMENU_MAXLEVELS = UIDROPDOWNMENU_MAXLEVELS + 1;
-		local newList = Create_DropDownMenuList("LibDropDownMenu_List"..UIDROPDOWNMENU_MAXLEVELS);
+		local newList = Create_DropDownList("LibDropDownMenu_List"..UIDROPDOWNMENU_MAXLEVELS);
 		newList:SetFrameStrata("FULLSCREEN_DIALOG");
 		newList:SetToplevel(true);
 		newList:Hide();
@@ -1240,8 +1242,6 @@ function CloseDropDownMenus(level)
 		_G["LibDropDownMenu_List"..i]:Hide();
 	end
 end
-
-hooksecurefunc(_G,"CloseDropDownMenus",CloseDropDownMenus);
 
 local function UIDropDownMenu_ContainsMouse()
 	for i = 1, UIDROPDOWNMENU_MAXLEVELS do

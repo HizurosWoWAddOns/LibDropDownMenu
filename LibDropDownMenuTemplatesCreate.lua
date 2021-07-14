@@ -5,7 +5,7 @@ local TOOLTIP_DEFAULT_BACKGROUND_COLOR = TOOLTIP_DEFAULT_BACKGROUND_COLOR;
 local NORMAL_FONT_COLOR,HIGHLIGHT_FONT_COLOR,BLACK_FONT_COLOR = NORMAL_FONT_COLOR,HIGHLIGHT_FONT_COLOR,BLACK_FONT_COLOR;
 local BackdropTemplateMixin = BackdropTemplateMixin;
 local GetPhysicalScreenSize = GetPhysicalScreenSize;
-local Round,Lerp,min,max,_G = Round,Lerp,min,max,_G;
+local Round,Lerp,min,max = Round,Lerp,min,max;
 local ClampedPercentageBetween = ClampedPercentageBetween;
 local PixelUtil,type,print,tinsert = PixelUtil,type,print,tinsert;
 
@@ -79,6 +79,19 @@ if not PixelUtil then -- classic compatibilty
 	end
 end
 
+
+-- lua replacement of UIDropDownCustomMenuEntryTemplate
+function Create_DropDownCustomMenuEntry(name,parent,opts)
+	local frame = CreateFrame("frame",name,parent);
+	Mixin(frame,UIDropDownCustomMenuEntryMixin);
+	frame:EnableMouse(true);
+	frame:Hide();
+	frame:SetScript("OnEnter",frame.OnEnter);
+	frame:SetScript("OnLeave",frame.OnLeave);
+end
+
+
+-- lua replacement of ColorSwatchTemplate
 local function ColorSwatch_OnClick(self)
 	CloseDropDownMenus();
 	UIDropDownMenuButton_OpenColorPicker(self:GetParent());
@@ -93,7 +106,6 @@ local function ColorSwatch_OnLeave(self)
 	self.SwatchBg:SetVertexColor(HIGHLIGHT_FONT_COLOR:GetRGB());
 end
 
--- lua replacement of ColorSwatchTemplate
 function Create_ColorSwatch(name, parent, opts)
 	local colorswatch = CreateFrame("Button",name,parent);
 
@@ -122,25 +134,19 @@ function Create_ColorSwatch(name, parent, opts)
 	return colorswatch;
 end
 
--- lua replacement of UIDropDownCustomMenuEntryTemplate
-function Create_DropDownCustomMenuEntry(name,parent,opts)
-	local frame = CreateFrame("frame",name,parent);
-	Mixin(frame,UIDropDownCustomMenuEntryMixin);
-	frame:EnableMouse(true);
-	frame:Hide();
-	frame:SetScript("OnEnter",frame.OnEnter);
-	frame:SetScript("OnLeave",frame.OnLeave);
-end
 
 -- lua replacement of UIDropDownMenuButtonTemplate
+local function MenuButton_OnEnable(self)
+	self.invisibleButton:Hide();
+end
+local function MenuButton_OnDisable(self)
+	self.invisibleButton:Show();
+end
+
 function Create_DropDownMenuButton(name,parent,opts)
 	local button = CreateFrame("Button",name,parent);
-	Mixin(button,DropDownMenuButtonMixin);
 	button:SetSize(100,16);
 	button:SetFrameLevel(parent:GetFrameLevel()+2);
-	button:SetScript("OnClick",UIDropDownMenuButton_OnClick);
-	button:SetScript("OnEnter",UIDropDownMenuButton_OnEnter);
-	button:SetScript("OnLeave",UIDropDownMenuButton_OnLeave);
 
 	if opts then
 		if opts.id then
@@ -148,45 +154,52 @@ function Create_DropDownMenuButton(name,parent,opts)
 		end
 	end
 
-	local text = button:CreateFontString(name.."NormalText","ARTWORK");
-	text:SetPoint("LEFT",-5,0);
-	button:SetFontString(text);
-	button:SetNormalFontObject("GameFontHighlightSmallLeft")
-	button:SetHighlightFontObject("GameFontHighlightSmallLeft");
-	button:SetDisabledFontObject("GameFontDisableSmallLeft");
-	button.NormalText = text;
-
+	-- <Layers>
+		-- <Layer>
 	local highlight = button:CreateTexture(name.."Highlight","BACKGROUND");
 	highlight:SetTexture([[Interface\QuestFrame\UI-QuestTitleHighlight]]);
 	highlight:SetBlendMode("ADD");
 	highlight:SetAllPoints();
 	highlight:Hide();
 	button.Highlight = highlight;
+		-- </Layer>
 
+		-- <Layer>
+			-- <Texture>
 	local check = button:CreateTexture(name.."Check","ARTWORK");
 	check:SetTexture([[Interface\Common\UI-DropDownRadioChecks]]);
 	check:SetSize(16,16);
 	check:SetPoint("LEFT",0,0);
 	check:SetTexCoord(0,0.5,0.5,1);
 	button.Check = check;
+			-- </Texture>
 
+			-- <Texture>
 	local uncheck = button:CreateTexture(name.."UnCheck","ARTWORK");
 	uncheck:SetTexture([[Interface\Common\UI-DropDownRadioChecks]]);
 	uncheck:SetSize(16,16);
 	uncheck:SetPoint("LEFT",0,0);
 	uncheck:SetTexCoord(0.5,1,0.5,1);
 	button.UnCheck = uncheck;
+			-- </Texture>
 
+			-- <Texture>
 	local icon = button:CreateTexture(name.."Icon","ARTWORK");
 	icon:Hide();
 	icon:SetSize(16,16);
 	icon:SetPoint("RIGHT",0,0);
 	button.Icon = icon;
+			-- </Texture>
+		-- </Layer>
+	-- </Layers>
 
+	-- <Frames>
+		-- <Button>
 	local color = Create_ColorSwatch(name.."ColorSwatch",button);
 	color:SetPoint("RIGHT",-6,0);
 	button.ColorSwatch = color;
-
+		-- </Button>
+		-- <DropDownToggleButton>
 	local expandArrow = CreateFrame("Button",name.."ExpandArrow",button);
 	Mixin(expandArrow,DropDownExpandArrowMixin);
 	expandArrow:SetMotionScriptsWhileDisabled(true);
@@ -199,7 +212,8 @@ function Create_DropDownMenuButton(name,parent,opts)
 	local arrow = expandArrow:CreateTexture(nil,"ARTWORK");
 	arrow:SetTexture([[Interface\ChatFrame\ChatFrameExpandArrow]]);
 	arrow:SetAllPoints();
-
+		-- </DropDownToggleButton>
+		-- <Button>
 	button.invisibleButton = CreateFrame("Button",name.."InvisibleButton",button);
 	button.invisibleButton:Hide();
 	button.invisibleButton:SetPoint("TOPLEFT");
@@ -207,16 +221,37 @@ function Create_DropDownMenuButton(name,parent,opts)
 	button.invisibleButton:SetPoint("RIGHT",color,"LEFT",0,0);
 	button.invisibleButton:SetScript("OnEnter",UIDropDownMenuButtonInvisibleButton_OnEnter);
 	button.invisibleButton:SetScript("OnLeave",UIDropDownMenuButtonInvisibleButton_OnLeave);
+		-- </Button>
+	-- </Frames>
+
+	-- <Scripts>
+	button:SetScript("OnClick",UIDropDownMenuButton_OnClick);
+	button:SetScript("OnEnter",UIDropDownMenuButton_OnEnter);
+	button:SetScript("OnLeave",UIDropDownMenuButton_OnLeave);
+	button:SetScript("OnEnable",MenuButton_OnEnable);
+	button:SetScript("OnDisable",MenuButton_OnDisable);
+	-- </Scripts>
+
+	-- <ButtonText>
+	button.NormalText = button:CreateFontString(name.."NormalText","ARTWORK");
+	button.NormalText:SetPoint("LEFT",-5,0);
+	button:SetFontString(button.NormalText);
+	-- </ButtonText>
+
+	button:SetNormalFontObject("GameFontHighlightSmallLeft")
+	button:SetHighlightFontObject("GameFontHighlightSmallLeft");
+	button:SetDisabledFontObject("GameFontDisableSmallLeft");
 
 	return button;
 end
 
+
+-- lua replacement of DropDownMenuListTemplate
 local function List_OnClick(self)
 	self:Hide();
 end
 
--- lua replacement of DropDownMenuListTemplate
-function Create_DropDownMenuList(name,parent,opts)
+function Create_DropDownList(name,parent,opts)
 	local list = CreateFrame("Button",name,parent);
 
 	list:Hide();
@@ -255,9 +290,7 @@ function Create_DropDownMenuList(name,parent,opts)
 	menuBackdrop:SetBackdropBorderColor(TOOLTIP_DEFAULT_COLOR.r, TOOLTIP_DEFAULT_COLOR.g, TOOLTIP_DEFAULT_COLOR.b);
 	menuBackdrop:SetBackdropColor(TOOLTIP_DEFAULT_BACKGROUND_COLOR.r, TOOLTIP_DEFAULT_BACKGROUND_COLOR.g, TOOLTIP_DEFAULT_BACKGROUND_COLOR.b);
 
-	for i=1, UIDROPDOWNMENU_MAXBUTTONS do
-		Create_DropDownMenuButton(name.."Button"..i,list,{id=i});
-	end
+	Create_DropDownMenuButton(name.."Button1",list,{id=1});
 
 	if not UIDROPDOWNMENU_DEFAULT_TEXT_HEIGHT then
 		local fontName, fontHeight, fontFlags = _G["LibDropDownMenu_List1Button1NormalText"]:GetFont();
@@ -267,9 +300,10 @@ function Create_DropDownMenuList(name,parent,opts)
 	return list;
 end
 
+
 -- lua replacement of UIDropDownMenuButtonScriptTemplate
-function Create_DropDownToggleButton(name,parent,mixin)
-	local button = CreateFrame("Button",name,parent);
+function Create_DropDownMenuButtonScript(name,parent,mixin)
+	local button = CreateFrame("DropDownToggleButton",name,parent);
 	Mixin(button,mixin or DropDownMenuButtonMixin);
 	button:SetMotionScriptsWhileDisabled(true);
 	button:SetScript("OnMouseDown",button.OnMouseDown);
@@ -278,11 +312,12 @@ function Create_DropDownToggleButton(name,parent,mixin)
 	return button;
 end
 
+
+-- lua replacement of UIDropDownMenuTemplate
 local function Menu_OnHide()
 	CloseDropDownMenus();
 end
 
--- lua replacement of UIDropDownMenuTemplate
 function Create_DropDownMenu(name,parent,opts)
 	local menu = CreateFrame("Frame",name);
 
@@ -295,6 +330,8 @@ function Create_DropDownMenu(name,parent,opts)
 		end
 	end
 
+	-- <Layers>
+		-- <Layer>
 	menu.Left = menu:CreateTexture(name.."Left","ARTWORK");
 	menu.Left:SetSize(25,64);
 	menu.Left:SetTexture([[Interface\Glues\CharacterCreate\CharacterCreate-LabelFrame]]);
@@ -318,17 +355,24 @@ function Create_DropDownMenu(name,parent,opts)
 	menu.Text:SetJustifyH("RIGHT");
 	menu.Text:SetSize(0,10);
 	menu.Text:SetPoint("RIGHT",menu.Right,"RIGHT",-43,2);
+		-- </Layer>
 
+		-- <Layer>
 	menu.Icon = menu:CreateTexture(name.."Icon","OVERLAY");
 	menu.Icon:Hide();
 	menu.Icon:SetSize(16,16);
 	menu.Icon:SetPoint("LEFT",30,2);
+		-- </Layer>
+	-- </Layers>
 
+	-- <Frames>
+		-- <DropDownToggleButton>
 	local buttonName = name.."Button";
-	menu.Button = Create_DropDownToggleButton(buttonName,menu);
+	menu.Button = Create_DropDownMenuButtonScript(buttonName,menu);
 	menu.Button:SetSize(24,24);
 	menu.Button:SetPoint("TOPRIGHT",menu.Right,"TOPRIGHT",-16,-18);
-
+			-- <Layers>
+				-- <Layer>
 	menu.Button.NormalTexture = menu.Button:CreateTexture(buttonName.."NormalTexture","ARTWORK");
 	menu.Button.NormalTexture:SetTexture([[Interface\ChatFrame\UI-ChatIcon-ScrollDown-Up]]);
 	menu.Button.NormalTexture:SetAllPoints();
@@ -348,20 +392,27 @@ function Create_DropDownMenu(name,parent,opts)
 	menu.Button.HighlightTexture:SetTexture([[Interface\ChatFrame\UI-Common-MouseHilight]],"ADD");
 	menu.Button.HighlightTexture:SetAllPoints();
 	menu.Button:SetHighlightTexture(menu.Button.HighlightTexture,"ADD");
-
+				-- </Layer>
+			-- </Layers>
+		-- </DropDownToggleButton>
+	-- </Frames>
 	return menu;
 end
+
 
 -- lua replacement of LargeUIDropDownMenuTemplate
 function Create_LargeDropDownMenu(name,parent)
 	local menu = CreateFrame("Frame",name);
 	menu:SetScript("OnHide",Menu_OnHide);
 
+	-- <Frames>
+		-- <DropDownToggleButton>
 	local buttonName = name.."Button";
-	menu.Button = Create_DropDownToggleButton(buttonName,menu,LargeDropDownMenuButtonMixin);
+	menu.Button = Create_DropDownMenuButtonScript(buttonName,menu,LargeDropDownMenuButtonMixin);
 	menu.Button:SetSize(27,26);
 	menu.Button:SetPoint("RIGHT",-3,2);
-
+			-- <Layers>
+				-- <Layer>
 	menu.Button.NormalTexture = menu.Button:CreateTexture(buttonName.."NormalTexture","ARTWORK");
 	menu.Button.NormalTexture:SetAtlas("auctionhouse-ui-dropdown-arrow-up",true);
 	menu.Button.NormalTexture:SetPoints("RIGHT");
@@ -381,7 +432,13 @@ function Create_LargeDropDownMenu(name,parent)
 	menu.Button.HighlightTexture:SetTexture([[Interface\ChatFrame\UI-Common-MouseHilight]],"ADD");
 	menu.Button.HighlightTexture:SetPoints("CENTER");
 	menu.Button:SetHighlightTexture(menu.Button.HighlightTexture,"ADD");
+				-- </Layer>
+			-- </Layers>
+		-- </DropDownToggleButton>
+	-- </Frames>
 
+	-- <Layers>
+		-- <Layer>
 	menu.Left = menu:CreateTexture("ARTWORK");
 	menu.Left:SetAtlas("auctionhouse-ui-dropdown-left",true);
 	menu.Left:SetPoint("LEFT");
@@ -399,16 +456,22 @@ function Create_LargeDropDownMenu(name,parent)
 	menu.Text:SetNonSpaceWrap(false);
 	menu.Text:SetJustifyH("RIGHT");
 	menu.Text:SetPoint("RIGHT",menu.Button,"LEFT",-4,1);
+		-- <Layer>
 
+		-- <Layer>
 	menu.Icon = menu:CreateTexture("OVERLAY");
 	menu.Icon:Hide();
 	menu.Icon:SetSize(16,16);
 	menu.Icon:SetPoint("LEFT",30,2);
+		-- <Layer>
+	-- <Layers>
 
 	return menu;
 end
 
+
+-- lua replacement of UIDropDownMenu.xml
 if not _G.LibDropDownMenu_List1 then
-	Create_DropDownMenuList("LibDropDownMenu_List1",nil,{id=1});
-	Create_DropDownMenuList("LibDropDownMenu_List2",nil,{id=2});
+	Create_DropDownList("LibDropDownMenu_List1",nil,{id=1});
+	Create_DropDownList("LibDropDownMenu_List2",nil,{id=2});
 end
