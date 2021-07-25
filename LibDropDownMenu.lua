@@ -1262,7 +1262,7 @@ function UIDropDownMenu_HandleGlobalMouseEvent(button, event)
 	end
 end
 
-if WOW_PROJECT_ID == WOW_PROJECT_MAINLINE then
+if _G.WOW_PROJECT_ID == _G.WOW_PROJECT_MAINLINE then
 	hooksecurefunc(_G,"UIDropDownMenu_HandleGlobalMouseEvent",UIDropDownMenu_HandleGlobalMouseEvent);
 end
 
