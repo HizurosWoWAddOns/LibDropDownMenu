@@ -9,7 +9,8 @@ externals:
       url: https://repos.wowace.com/wow/callbackhandler/trunk/CallbackHandler-1.0
       tag: latest
 
-enable-nolib-creation: yes
+enable-nolib-creation: no
+enable-toc-creation: yes
 
 ignore:
    - libs/LibStub/tests
