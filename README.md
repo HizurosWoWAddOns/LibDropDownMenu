@@ -1,4 +1,4 @@
-# AFK Fullscreen warning (WoW AddOn)
+# LibDropDownMenu (WoW AddOn Library)
 ![Build](https://github.com/HizurosWoWAddOns/LibDropDownMenu/actions/workflows/bigwigsmods-packager.yml/badge.svg)
 ![Tag](https://img.shields.io/github/v/tag/HizurosWoWAddOns/LibDropDownMenu?style=flat-square)
 ![Downloads](https://img.shields.io/github/downloads/HizurosWoWAddOns/LibDropDownMenu/total?style=flat-square)
