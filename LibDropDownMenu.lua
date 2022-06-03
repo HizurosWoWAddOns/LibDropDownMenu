@@ -7,10 +7,10 @@ if not lib then return end
 local _G,print,math,type,max,table,tonumber = _G,print,math,type,max,table,tonumber;
 local strmatch,gsub,ipairs,strlen,strsub,select = strmatch,gsub,ipairs,strlen,strsub,select;
 local hooksecurefunc = hooksecurefunc;
-local CreateFrame,GetCursorPosition = CreateFrame,GetCursorPosition;
+local CreateFrame,GetCursorPosition,PlaySound = CreateFrame,GetCursorPosition,PlaySound;
 local GetScreenWidth,GetScreenHeight = GetScreenWidth,GetScreenHeight;
 local GetCVar,SetCVar,GetAppropriateTooltip = GetCVar,SetCVar,GetAppropriateTooltip;
-local UIParent,GameTooltip_SetTitle = UIParent,GameTooltip_SetTitle;
+local UIParent,SOUNDKIT,GameTooltip_SetTitle = UIParent,SOUNDKIT,GameTooltip_SetTitle;
 local GameFontDisableSmallLeft = GameFontDisableSmallLeft;
 local GameFontHighlightSmallLeft = GameFontHighlightSmallLeft;
 local GameFontNormalSmallLeft = GameFontNormalSmallLeft;
