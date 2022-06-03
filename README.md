@@ -9,10 +9,10 @@
 ![Sponsors](https://img.shields.io/github/sponsors/HizurosWoWAddOns?logo=github&style=flat-square)
 
 ## Description
-This is a converted version of Blizzards UIDropDownMenu from WoW Retail 9.0.5.37893 into a library accessable by LibStub.\
-\
-Since Blizzards new xml error handling it is a problem to use xml templates in libraries. I've converted the templates into lua functions.
+This is a converted version of Blizzards UIDropDownMenu from WoW Retail into a library accessable by LibStub. I update it from time to time to current retail version.\
 
+**XML Errors in Retail**
+*Since Blizzards new xml error handling it is a problem to use xml templates in libraries. I've converted the templates into lua functions.*
 
 ## The XML templates are converted into lua functions
 ```
