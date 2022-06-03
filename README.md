@@ -33,9 +33,6 @@ local menuList = {
 lib.EasyMenu(menuList,menuFrame,"cursor",0,0,"MENU");
 ```
 
-## Repository
-`git clone https://repos.curseforge.com/wow/libdropdownmenu`
-
 ## In .pkgmeta file
 ```yaml
 externals:
