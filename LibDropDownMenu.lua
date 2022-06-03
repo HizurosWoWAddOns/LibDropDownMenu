@@ -6,7 +6,7 @@ if not lib then return end
 
 local _G,print,math,type,max,table,tonumber = _G,print,math,type,max,table,tonumber;
 local strmatch,gsub,ipairs,strlen,strsub,select = strmatch,gsub,ipairs,strlen,strsub,select;
-local hooksecurefunc = hooksecurefunc;
+local hooksecurefunc,C_Texture = hooksecurefunc,C_Texture;
 local CreateFrame,GetCursorPosition,PlaySound = CreateFrame,GetCursorPosition,PlaySound;
 local GetScreenWidth,GetScreenHeight = GetScreenWidth,GetScreenHeight;
 local GetCVar,SetCVar,GetAppropriateTooltip = GetCVar,SetCVar,GetAppropriateTooltip;
@@ -481,7 +481,11 @@ function UIDropDownMenu_AddButton(info, level)
 		-- Set icon
 		if ( info.icon or info.mouseOverIcon ) then
 			icon:SetSize(16,16);
-			icon:SetTexture(info.icon);
+			if(info.icon and C_Texture.GetAtlasInfo(info.icon)) then
+				icon:SetAtlas(info.icon);
+			else
+				icon:SetTexture(info.icon);
+			end
 			icon:ClearAllPoints();
 			icon:SetPoint("RIGHT", info.iconXOffset or 0, 0);
 
@@ -520,7 +524,6 @@ function UIDropDownMenu_AddButton(info, level)
 	if (info.iconOnly and info.icon) then
 		button.iconOnly = true;
 		button.icon = info.icon;
-		button.iconXOffset = info.iconXOffset;
 		button.iconInfo = info.iconInfo;
 
 		UIDropDownMenu_SetIconImage(icon, info.icon, info.iconInfo);
@@ -555,6 +558,7 @@ function UIDropDownMenu_AddButton(info, level)
 	button.noClickSound = info.noClickSound;
 	button.padding = info.padding;
 	button.icon = info.icon;
+	button.iconXOffset = info.iconXOffset;
 	button.mouseOverIcon = info.mouseOverIcon;
 	button.ignoreAsMenuSelection = info.ignoreAsMenuSelection;
 
@@ -960,7 +964,7 @@ end
 
 function UIDropDownMenuButton_OnClick(self)
 	local checked = self.checked;
-	if ( type(checked) == "function" ) then
+	if ( type (checked) == "function" ) then
 		checked = checked(self);
 	end
 
@@ -1488,7 +1492,7 @@ end
 function UIDropDownMenu_GetValue(id)
 	--Only works if the dropdown has just been initialized, lame, I know =(
 	local button = _G["LibDropDownMenu_List1Button"..id];
-	if button then
+	if ( button ) then
 		return _G["LibDropDownMenu_List1Button"..id].value;
 	else
 		return nil;
