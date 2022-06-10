@@ -14,6 +14,18 @@ This is a converted version of Blizzards UIDropDownMenu from WoW Retail into a l
 **XML Errors in Retail**\
 *Since Blizzards new xml error handling it is a problem to use xml templates in libraries. I've converted the templates into lua functions.*
 
+### Little extra with version r24
+Since version r24 this library has a little extra i've missed in original. I like to use easymenu but the original has no option to add a separator by menuList table.
+```lua
+local menuList = {
+	{ text="Some text", isTitle = true },
+	{ separator = true }, -- new in r24
+	{ text="More text", func=function() end}
+}
+```
+
+@Blizzard feel free to add it to the original 🤓
+
 ## The XML templates are converted into lua functions
 ```
 UIDropDownMenuButtonTemplate into <lib>.Create_DropDownMenuButton(<name>[,<parent>[,<optsTable>]]>
