@@ -1,5 +1,5 @@
-## Interface: 90205
-## Interface-BCC: 20504
+## Interface: 90207
+## Interface-Wrath: 30400
 ## Interface-Classic: 11403
 ## Title: Lib: LibDropDownMenu
 ## Notes: Library providing downdown menu like blizzards DropDownMenu
