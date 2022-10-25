@@ -188,6 +188,15 @@ function Create_DropDownMenuButton(name,parent,opts)
 	icon:Hide();
 	icon:SetSize(16,16);
 	icon:SetPoint("RIGHT",0,0);
+	if icon.SetScript then -- added with dragonflight
+		icon:SetScript("OnEnter",UIDropDownMenuButtonIcon_OnEnter);
+		icon:SetScript("OnLeave",UIDropDownMenuButtonIcon_OnLeave);
+		icon:SetScript("OnMouseUp",function(self,button)
+			if ( button == "LeftButton" ) then
+				UIDropDownMenuButtonIcon_OnClick(self, button);
+			end
+		end);
+	end
 	button.Icon = icon;
 			-- </Texture>
 		-- </Layer>
@@ -472,6 +481,7 @@ end
 
 -- lua replacement of UIDropDownMenu.xml
 if not _G.LibDropDownMenu_List1 then
-	Create_DropDownList("LibDropDownMenu_List1",nil,{id=1});
-	Create_DropDownList("LibDropDownMenu_List2",nil,{id=2});
+	for i=1, UIDROPDOWNMENU_MAXLEVELS, 1 do
+		Create_DropDownList("LibDropDownMenu_List"..i,nil,{id=i});
+	end
 end
