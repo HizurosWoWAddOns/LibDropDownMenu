@@ -300,6 +300,8 @@ function UIDropDownMenuButton_OnEnter(self)
 	end
 
 	GetValueOrCallFunction(self, "funcOnEnter", self);
+	--self.NewFeature:Hide(); -- in retail, but why?
+	self.NewFeature:SetShown(self.showNewLabel);
 end
 
 function UIDropDownMenuButton_OnLeave(self)
@@ -666,6 +668,7 @@ function UIDropDownMenu_AddButton(info, level)
 	button.iconXOffset = info.iconXOffset;
 	button.mouseOverIcon = info.mouseOverIcon;
 	button.ignoreAsMenuSelection = info.ignoreAsMenuSelection;
+	button.showNewLabel = info.showNewLabel;
 
 	if ( info.value ~= nil) then
 		button.value = info.value;
@@ -795,6 +798,7 @@ function UIDropDownMenu_AddButton(info, level)
 		_G[listFrameName.."Button"..index.."UnCheck"]:Hide();
 	end
 	button.checked = info.checked;
+	button.NewFeature:SetShown(button.showNewLabel);
 
 	-- If has a colorswatch, show it and vertex color it
 	local colorSwatch = _G[listFrameName.."Button"..index.."ColorSwatch"];
@@ -895,6 +899,9 @@ function UIDropDownMenu_GetButtonWidth(button)
 	if ( button.hasArrow or button.hasColorSwatch ) then
 		width = width + 10;
 	end
+	if (button.showNewLabel) then
+		width = width + button.NewFeature.Label:GetUnboundedStringWidth();
+	end
 	if ( button.notCheckable ) then
 		width = width - 30;
 	end
@@ -966,6 +973,10 @@ function UIDropDownMenu_Refresh(frame, useValue, dropdownLevel)
 				uncheckImage:Show();
 			end
 		end
+
+		local normalText = _G[button:GetName().."NormalText"];
+		button.NewFeature:SetShown(button.showNewLabel);
+		button.NewFeature:SetPoint("LEFT", normalText, "RIGHT", 20, 0);
 
 		if ( button:IsShown() ) then
 			local width = UIDropDownMenu_GetButtonWidth(button);
