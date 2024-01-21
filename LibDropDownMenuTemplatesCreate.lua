@@ -479,10 +479,3 @@ function Create_LargeDropDownMenu(name,parent)
 	return menu;
 end
 
-
--- lua replacement of UIDropDownMenu.xml
-if not _G.LibDropDownMenu_List1 then
-	for i=1, UIDROPDOWNMENU_MAXLEVELS, 1 do
-		Create_DropDownList("LibDropDownMenu_List"..i,nil,{id=i});
-	end
-end
