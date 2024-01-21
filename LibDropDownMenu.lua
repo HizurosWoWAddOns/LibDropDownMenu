@@ -1547,7 +1547,11 @@ function UIDropDownMenuButton_OpenColorPicker(self, button)
 		button = self;
 	end
 	UIDROPDOWNMENU_MENU_VALUE = button.value;
-	OpenColorPicker(button);
+	if ColorPickerFrame.SetupColorPickerAndShow then
+		ColorPickerFrame:SetupColorPickerAndShow(button);
+	else
+		OpenColorPicker(button); -- classic
+	end
 end
 
 function UIDropDownMenu_DisableButton(level, id)
