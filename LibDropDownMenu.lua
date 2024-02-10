@@ -103,9 +103,6 @@ function UIDropDownMenu_InitializeHelper(frame)
 	-- Hide all the buttons
 	local button, dropDownList;
 	for i = 1, UIDROPDOWNMENU_MAXLEVELS, 1 do
-		if not _G["LibDropDownMenu_List"..i] then
-			Create_DropDownList("LibDropDownMenu_List"..i,nil,{id=i});
-		end
 		dropDownList = _G["LibDropDownMenu_List"..i];
 		if ( i >= UIDROPDOWNMENU_MENU_LEVEL or frame ~= UIDROPDOWNMENU_OPEN_MENU ) then
 			dropDownList.numButtons = 0;
@@ -144,10 +141,6 @@ function UIDropDownMenu_Initialize(frame, initFunction, displayMode, level, menu
 	--master frame
 	if(level == nil) then
 		level = 1;
-	end
-
-	if not _G["LibDropDownMenu_List"..level] then
-		Create_DropDownList("LibDropDownMenu_List"..level,nil,{id=level});
 	end
 
 	local dropDownList = _G["LibDropDownMenu_List"..level];
@@ -300,7 +293,7 @@ function UIDropDownMenuButton_OnEnter(self)
 	end
 
 	GetValueOrCallFunction(self, "funcOnEnter", self);
-	--self.NewFeature:Hide(); -- in retail, but why?
+	--self.NewFeature:Hide(); -- why should it disappear on mouse over? (found in retail code)
 	self.NewFeature:SetShown(self.showNewLabel);
 end
 
@@ -1684,7 +1677,7 @@ function UIDropDownMenu_GetValue(id)
 	end
 end
 
-function OpenColorPicker(info)
+function OpenColorPicker(info) -- deprecated in retail
 	ColorPickerFrame.func = info.swatchFunc;
 	ColorPickerFrame.hasOpacity = info.hasOpacity;
 	ColorPickerFrame.opacityFunc = info.opacityFunc;
