@@ -1,4 +1,4 @@
-## Interface: 110200, 50500, 11507
+## Interface: 120000, 110207, 50503, 38000, 11508
 ## Title: Lib: LibDropDownMenu
 ## Notes: Library providing downdown menu like blizzards DropDownMenu
 ## Author: Hizuro
